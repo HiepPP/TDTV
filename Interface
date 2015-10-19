@@ -1,0 +1,24 @@
+using System;
+using System.Collections.Generic;
+using SSC.ComicOnline.Models;
+
+namespace SSC.ComicOnline.Repositories
+{
+    public interface IBaseRepository<TEntity> where TEntity : Base
+    {
+        TEntity FindById(Guid id);
+        bool Insert(TEntity item);
+        bool Insert(List<TEntity> list);
+        bool Update(TEntity item);
+        bool Update(List<TEntity> dtoList);
+        bool DisableById(Guid id);
+        bool ActiveById(Guid id);
+        bool DeleteById(Guid id);
+        int TotalItem();
+        int TotalItemActive();
+        IEnumerable<TEntity> GetAll();
+        IEnumerable<TEntity> GetAllActive();
+        IEnumerable<TEntity> GetAll(int pageindex, int takerecord);
+        IEnumerable<TEntity> GetAllActive(int pageindex, int takerecord);
+    }
+}
