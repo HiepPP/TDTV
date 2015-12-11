@@ -1,0 +1,2 @@
+// count length of viewbag
+(Enumerable.Count(ViewBag.ComicName) < 100)
