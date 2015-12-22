@@ -1,2 +1,10 @@
 // count length of viewbag
 (Enumerable.Count(ViewBag.ComicName) < 100)
+// When fileupload too large
+<system.webServer>
+   <security>
+      <requestFiltering>
+         <requestLimits maxAllowedContentLength="1073741824" />
+      </requestFiltering>
+   </security>
+ </system.webServer>
