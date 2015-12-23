@@ -1,5 +1,7 @@
 // count length of viewbag
 (Enumerable.Count(ViewBag.ComicName) < 100)
+
+
 // When fileupload too large
 <system.webServer>
    <security>
@@ -8,3 +10,7 @@
       </requestFiltering>
    </security>
  </system.webServer>
+ 
+ //2 ways to get a select item on dropdownlist with Js
+ 1) $('select#ElementId').val();
+ 2) $('#ElementId option:selected').val();
