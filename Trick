@@ -15,3 +15,7 @@
  //2 ways to get a select item on dropdownlist with Js
  1) $('select#ElementId').val();
  2) $('#ElementId option:selected').val();
+
+
+//Getting the HTTP Referrer
+Request.UrlReferrer
