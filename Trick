@@ -19,3 +19,7 @@
 
 //Getting the HTTP Referrer
 Request.UrlReferrer
+
+
+//Get url( controller and action name)
+var path = string.Format("/{0}/{1}/", ViewContext.RouteData.Values["controller"], ViewContext.RouteData.Values["action"]).ToLower();
