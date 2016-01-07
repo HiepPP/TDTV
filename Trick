@@ -23,3 +23,6 @@ Request.UrlReferrer
 
 //Get url( controller and action name)
 var path = string.Format("/{0}/{1}/", ViewContext.RouteData.Values["controller"], ViewContext.RouteData.Values["action"]).ToLower();
+
+//Format datetime
+@subjDetail.BilledDate.Value.ToString("dd/MM/yyyy")
