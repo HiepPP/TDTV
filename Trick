@@ -26,3 +26,7 @@ var path = string.Format("/{0}/{1}/", ViewContext.RouteData.Values["controller"]
 
 //Format datetime
 @subjDetail.BilledDate.Value.ToString("dd/MM/yyyy")
+
+
+//If value nullable but add a value null
+listvalue.Add(CheckboxValue.GetValueOrDefault());
