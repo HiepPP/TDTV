@@ -1,0 +1,108 @@
+public sealed class MailHelper
+	{
+		public string Host { get; set; }
+		public string Username { get; set; }
+		public string Email { get; set; }
+		public string Password { get; set; }
+		public int Port { get; set; }
+		public bool Send(string to, string subject, string message)
+		{
+			try
+			{
+				SmtpClient client = new SmtpClient(Host, Port);
+				client.Credentials = new NetworkCredential(Username, Password);
+				client.EnableSsl = true;
+
+				MailAddress fromaddress = new MailAddress(Email);
+				MailAddress toaddress = new MailAddress(to);
+				MailMessage msg = new MailMessage(fromaddress, toaddress);
+				msg.IsBodyHtml = true;
+				msg.Subject = subject;
+				msg.Body = message;
+
+				ServicePointManager.ServerCertificateValidationCallback =
+				delegate (object s, X509Certificate certificate,
+						 X509Chain chain, SslPolicyErrors sslPolicyErrors)
+				{ return true; };
+				client.Send(msg);
+				return true;
+			}
+			catch (Exception e)
+			{
+				Logger.FrameworkLogger.Error(e.Message, e);
+				return false;
+			}
+		}
+		public async Task<bool> SendAsync(string to, string subject, string message)
+		{
+			try
+			{
+				using (var client = new SmtpClient(Host, Port))
+				{
+					client.Credentials = new NetworkCredential(Username, Password);
+					client.EnableSsl = true;
+
+					MailAddress fromaddress = new MailAddress(Email);
+					MailAddress toaddress = new MailAddress(to);
+					MailMessage msg = new MailMessage(fromaddress, toaddress);
+					msg.IsBodyHtml = true;
+					msg.Subject = subject;
+					msg.Body = message;
+
+					ServicePointManager.ServerCertificateValidationCallback =
+					delegate (object s, X509Certificate certificate,
+							 X509Chain chain, SslPolicyErrors sslPolicyErrors)
+					{ return true; };
+
+					await client.SendMailAsync(msg);
+					return true;
+				}
+			}
+			catch (Exception e)
+			{
+				Logger.FrameworkLogger.Error(e.Message, e);
+				return false;
+			}
+		}
+
+		public bool Send(string to, string subject, string message, string attachment)
+		{
+			try
+			{
+				SmtpClient client = new SmtpClient(Host, Port);
+				client.Credentials = new NetworkCredential(Username, Password);
+				client.EnableSsl = true;
+
+				MailAddress fromaddress = new MailAddress(Username);
+				MailAddress toaddress = new MailAddress(to);
+				MailMessage msg = new MailMessage(fromaddress, toaddress);
+				msg.IsBodyHtml = true;
+				msg.Subject = subject;
+				msg.Body = message;
+				if (!string.IsNullOrEmpty(attachment))
+					msg.Attachments.Add(new Attachment(attachment));
+
+				client.Send(msg);
+				return true;
+			}
+			catch (Exception e)
+			{
+				Logger.FrameworkLogger.Error(e.Message, e);
+				return false;
+			}
+		}
+
+		public static string ReadMailTemplate(string path)
+		{
+			string msg = string.Empty;
+			try
+			{
+				msg = File.ReadAllText(path);
+			}
+			catch (Exception e)
+			{
+				Logger.FrameworkLogger.Error(e.Message, e);
+			}
+			return msg;
+		}
+	}
