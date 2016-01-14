@@ -1,0 +1,240 @@
+public static class ObjectExtension
+	{
+		public static bool IsNull(this object obj)
+		{
+			if (obj == null || DBNull.Value == obj)
+				return true;
+			return false;
+		}
+		public static bool IsNotNull(this object obj)
+		{
+			return !IsNull(obj);
+		}
+		public static string ConvertToString(this object value)
+		{
+			if (value == null)
+				return string.Empty;
+			return value.ToString();
+		}
+		public static int CInt(this object value, int defaultValue = 0)
+		{
+			if (value.IsNull())
+				return defaultValue;
+			try
+			{
+				return Convert.ToInt32(value);
+			}
+			catch
+			{ return defaultValue; }
+		}
+		public static decimal CDecimal(this object value, decimal defaultValue = 0M)
+		{
+			if (value.IsNull())
+				return defaultValue;
+			try
+			{
+				return Convert.ToDecimal(value);
+			}
+			catch
+			{ return defaultValue; }
+		}
+        public static string f_CString(this object value)
+        {
+            return value != null ? value.ToString() : string.Empty;
+        }
+        public static Guid f_CGuid(this object a_Value)
+        {
+            Guid l_out;
+            a_Value = a_Value != null ? a_Value : "";
+            Guid.TryParse(a_Value.ToString(), out l_out);
+            return l_out;
+
+        }
+        public static DateTime f_CDate(this object value)
+        {
+            DateTime l_out;
+            value = value != null ? value : "";
+            DateTime.TryParse(value.ToString(), out l_out);
+            return l_out;
+        }
+        public static int f_CInt(this object a_Value)
+        {
+            int l_out;
+            a_Value = a_Value != null ? a_Value : 0;
+            int.TryParse(a_Value.ToString(), out l_out);
+            return l_out;
+
+        }
+		public static long CLong(this object value, long defaultValue = 0)
+		{
+			if (value.IsNull())
+				return defaultValue;
+			try
+			{
+				return Convert.ToInt64(value);
+			}
+			catch
+			{ return defaultValue; }
+		}
+		public static SelectList ToSelectList<TEnum>(this TEnum enumObj)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			var values = from TEnum e in Enum.GetValues(typeof(TEnum))
+						 select new { Id = e, Name = e.GetEnumDescription() };
+			return new SelectList(values, "Id", "Name", enumObj);
+		}
+		public static string GetEnumDescription<TEnum>(this TEnum en)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+					return ((DescriptionAttribute)attrs[0]).Description;
+			}
+			return en.ToString();
+		}
+
+		public static string GetCustomClass<TEnum>(this TEnum en)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(CustomClassAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+					return ((CustomClassAttribute)attrs[0]).Description;
+			}
+			return en.ToString();
+		}
+
+		public static string GetCustomName<TEnum>(this TEnum en)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(CustomNameAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+					return ((CustomNameAttribute)attrs[0]).Description;
+			}
+			return en.ToString();
+		}
+
+		public static string GetCustomIcon<TEnum>(this TEnum en)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(CustomIconAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+					return ((CustomIconAttribute)attrs[0]).Description;
+			}
+			return en.ToString();
+		}
+
+		public static string GetCustomDesc<TEnum>(this TEnum en)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(CustomDescAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+					return ((CustomDescAttribute)attrs[0]).Description;
+			}
+			return en.ToString();
+		}
+
+		public static string GetShortCode<TEnum>(this TEnum en)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			Type type = en.GetType();
+			MemberInfo[] memInfo = type.GetMember(en.ToString());
+			if (memInfo != null && memInfo.Length > 0)
+			{
+				object[] attrs = memInfo[0].GetCustomAttributes(typeof(ShortCodeAttribute), false);
+				if (attrs != null && attrs.Length > 0)
+					return ((ShortCodeAttribute)attrs[0]).Description;
+			}
+			return en.ToString();
+		}
+
+		// Transform object extension
+		/// <summary>
+		/// Transform all matched properies between two objects
+		/// </summary>
+		/// <typeparam name="TDestination"></typeparam>
+		/// <param name="sourceObject"></param>
+		/// <param name="ExcludeProperties">[PropertyA][PropertyB][....]</param>
+		/// <returns></returns>
+		public static TDestination TransformTo<TDestination>(this object sourceObject, string ExcludeProperties = "") where TDestination : class
+		{
+			if (!sourceObject.IsNull())
+			{
+				if (!ExcludeProperties.StringIsNullEmptyWhiteSpace())
+				{
+					ExcludeProperties = ExcludeProperties.Trim().ToLower();
+					ExcludeProperties = "[" + ExcludeProperties + "]";
+				}
+				var destinationObject = Activator.CreateInstance(typeof(TDestination));
+				typeof(TDestination).GetProperties().AsParallel().ForAll(destProperty =>
+				{
+					PropertyInfo sourceProperty = sourceObject.GetType().GetProperty(destProperty.Name);
+					try
+					{
+						if (sourceProperty != null && !ExcludeProperties.Contains("[" + sourceProperty.Name.ToLower() + "]") && destProperty.CanWrite)
+						{
+							object sourceValue = sourceProperty.GetValue(sourceObject);
+							object desValue = destProperty.GetValue(destinationObject);
+							if (!object.Equals(sourceValue, desValue))
+								destProperty.SetValue(destinationObject, sourceValue);
+						}
+					}
+					catch (Exception ex)
+					{
+						Logger.Error("Transform<TDestination>", ex);
+					}
+				});
+				return (destinationObject as TDestination);
+			}
+			return null;
+		}
+
+		public static List<TDestination> TransformBetweenCollection<TDestination, TSource>(this List<TSource> sourceCollection, string ExcludeProperties = "")
+			where TDestination : class
+			where TSource : class
+		{
+			var desCollection = new List<TDestination>();
+			if (!sourceCollection.IsNull() && sourceCollection.Any())
+				sourceCollection.ForEach(source =>
+				{
+					var obj = source.TransformTo<TDestination>(ExcludeProperties);
+					desCollection.Add(obj);
+				});
+			return desCollection;
+		}
+
+		public static T Clone<T>(this T source)
+		{
+			// Don't serialize a null object, simply return the default for that object
+			if (Object.ReferenceEquals(source, null))
+			{
+				return default(T);
+			}
+
+			return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source));
+		}
+
+		public static string ToJson(this Object obj)
+		{
+			return new JavaScriptSerializer().Serialize(obj);
+		}
+	}
