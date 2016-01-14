@@ -1,0 +1,220 @@
+ public class UploadResult
+    {
+        public bool IsSuccess { get; set; }
+        public string FileName { get; set; }
+
+        public string ImageThumbnail { get; set; }
+        public string Result { get; set; }
+    }
+
+    public static class UploadFileResult
+    {
+
+        private static readonly string Rootimage = HttpContext.Current.Server.MapPath(WebConfigurationManager.AppSettings["Root_Directory"].ToString());
+        private static readonly string Rootimagethumbnail = HttpContext.Current.Server.MapPath(WebConfigurationManager.AppSettings["RootImageThumbnail"].ToString());
+        private static readonly string Rootimagethumbnail2 = HttpContext.Current.Server.MapPath(WebConfigurationManager.AppSettings["RootImageThumbnail2"].ToString());
+        private static readonly int Heightthumbnail = int.Parse(WebConfigurationManager.AppSettings["HeightThumbnail"].ToString());
+        private static readonly string Rootfile = HttpContext.Current.Server.MapPath(WebConfigurationManager.AppSettings["RootFile"].ToString());
+        private static readonly int Maxlengthfile = int.Parse(WebConfigurationManager.AppSettings["MaxlengthFile"].ToString());
+
+        private static void CreateFolder(string path)
+        {
+            try
+            {
+                // Determine whether the directory exists.
+                if (!Directory.Exists(path))
+                {
+                    // Try to create the directory.    
+                    DirectoryInfo di = Directory.CreateDirectory(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(string.Format("Error when create temp folder. Ex:{0}", ex));
+            }
+        }
+
+        private static string GetTempUploadImagePath(string saveFileName)
+        {
+            return string.Format("{0}{1}", Rootimage, saveFileName);
+        }
+        private static string GetTempUploadImageThumbnailPath(string saveFileName)
+        {
+            return string.Format("{0}{1}", Rootimagethumbnail, saveFileName);
+        }
+        private static string GetTempUploadImageThumbnailPath2(string saveFileName)
+        {
+            return string.Format("{0}{1}", Rootimagethumbnail2, saveFileName);
+        }
+        private static string GetTempUploadFilePath(string saveFileName)
+        {
+            return string.Format("{0}{1}", Rootfile, saveFileName);
+        }
+
+        public static UploadResult UploadImage(HttpPostedFileBase fileimage)
+        {
+            try
+            {
+                if (fileimage == null)
+                {
+                    return new UploadResult
+                    {
+                        IsSuccess = false,
+                        FileName = "",
+                        Result = "",
+                        ImageThumbnail = ""
+                    };
+                }
+
+                if (!ExtentionFile.CheckExtentionFileImage(fileimage.FileName.ToLower()))
+                {
+                    return new UploadResult
+                    {
+                        IsSuccess = false,
+                        FileName = "",
+                        Result = ConstantStrings.ExtensionImageSupport,
+                        ImageThumbnail = ""
+                    };
+                }
+
+                if (fileimage.ContentLength > Maxlengthfile)
+                {
+                    return new UploadResult
+                    {
+                        IsSuccess = false,
+                        FileName = "",
+                        Result = ConstantStrings.MaxLengthFileSupport,
+                        ImageThumbnail = ""
+                    };
+                }
+                CreateFolder(Rootimage);
+                var filename = string.Format("{0}.{1}", GetStringTimes.GetTimes(DateTime.Now), ExtentionFile.GetExtentionFileImageString(fileimage.FileName.ToLower()));
+                fileimage.SaveAs(GetTempUploadImagePath(filename));
+                GenerateThumbNail(filename, Heightthumbnail); // Thumbnail 1
+                //GenerateThumbNail2(filename); // Thumbnail 2
+                return new UploadResult
+                {
+                    IsSuccess = true,
+                    FileName = filename,
+                    Result = ConstantStrings.UploadSuccess,
+                    ImageThumbnail = filename
+                };
+
+            }
+            catch (Exception)
+            {
+                return new UploadResult
+                {
+                    IsSuccess = false,
+                    FileName = "",
+                    Result = ConstantStrings.UploadNonSuccess,
+                    ImageThumbnail = ""
+                };
+            }
+        }
+        
+        public static UploadResult UploadFileOther(HttpPostedFileBase filebase)
+        {
+            try
+            {
+                if (filebase == null)
+                {
+                    return new UploadResult
+                    {
+                        IsSuccess = false,
+                        FileName = "",
+                        Result = "",
+                        ImageThumbnail = ""
+                    };
+                }
+
+                if (!ExtentionFile.CheckExtention(filebase.FileName.ToLower()))
+                {
+                    return new UploadResult
+                    {
+                        IsSuccess = false,
+                        FileName = "",
+                        Result = ConstantStrings.ExtensionFileSupport,
+                        ImageThumbnail = ""
+                    };
+                }
+
+                if (filebase.ContentLength > Maxlengthfile)
+                {
+                    return new UploadResult
+                    {
+                        IsSuccess = false,
+                        FileName = "",
+                        Result = ConstantStrings.MaxLengthFileSupport,
+                        ImageThumbnail = ""
+                    };
+                }
+                CreateFolder(Rootfile);
+                string filename = string.Format("{0}.{1}", GetStringTimes.GetTimes(DateTime.Now), ExtentionFile.GetExtentionString(filebase.FileName.ToLower()));
+                filebase.SaveAs(GetTempUploadFilePath(filename));
+                return new UploadResult
+                {
+                    IsSuccess = true,
+                    FileName = filename,
+                    Result = ConstantStrings.UploadSuccess,
+                    ImageThumbnail = ""
+                };
+            }
+            catch (Exception)
+            {
+                return new UploadResult
+                {
+                    IsSuccess = false,
+                    FileName = "",
+                    Result = ConstantStrings.UploadNonSuccess,
+                    ImageThumbnail = ""
+                };
+            }
+        }
+
+        private static void GenerateThumbNail(string imageName, int height)
+        {
+            Image image = Image.FromFile(GetTempUploadImagePath(imageName));
+            int srcWidth = image.Width;
+            int srcHeight = image.Height;
+
+            float thumbHeight = (float)height;
+            float thumbWidth = ((float)srcWidth / (float)srcHeight) * (float)thumbHeight;
+            Bitmap bmp = new Bitmap((int)thumbWidth, (int)thumbHeight);
+
+            Graphics gr = Graphics.FromImage(bmp);
+            gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            gr.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+            Rectangle rectDestination = new Rectangle(0, 0, (int)thumbWidth, (int)thumbHeight);
+            gr.DrawImage(image, rectDestination, 0, 0, srcWidth, srcHeight, GraphicsUnit.Pixel);
+            CreateFolder(Rootimagethumbnail);
+            bmp.Save(GetTempUploadImageThumbnailPath(imageName));
+            bmp.Dispose();
+            image.Dispose();
+
+        }
+
+        private static void GenerateThumbNail2(string imageName)
+        {
+            Image image = Image.FromFile(GetTempUploadImagePath(imageName));
+            int srcWidth = image.Width;
+            int srcHeight = image.Height;
+
+            int thumbHeight = 300;
+            int thumbWidth = 400;
+            Bitmap bmp = new Bitmap(thumbWidth, thumbHeight);
+
+            Graphics gr = Graphics.FromImage(bmp);
+            gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            gr.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+            Rectangle rectDestination = new Rectangle(0, 0, thumbWidth, thumbHeight);
+            gr.DrawImage(image, rectDestination, 0, 0, srcWidth, srcHeight, GraphicsUnit.Pixel);
+            CreateFolder(Rootimagethumbnail2);
+            bmp.Save(GetTempUploadImageThumbnailPath2(imageName));
+            bmp.Dispose();
+            image.Dispose();
+
+        }
+    }
