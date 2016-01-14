@@ -1,0 +1,120 @@
+public static class StringExtension
+	{
+		public static bool StringIsNullEmptyWhiteSpace(this string obj)
+		{
+			if (string.IsNullOrEmpty(obj) || (string.IsNullOrWhiteSpace(obj)))
+				return true;
+			return false;
+		}
+		public static string HashPassword(this string value)
+		{
+			return SHA1.Hash(value);
+		}
+		public static Guid? CGuid(this string value)
+		{
+			try
+			{
+				if (value.StringIsNullEmptyWhiteSpace())
+					return null;
+				return Guid.Parse(value);
+			}
+			catch
+			{ return null; }
+		}
+		public static Guid ToGuid(this string value)
+		{
+			try
+			{
+				if (value.StringIsNullEmptyWhiteSpace())
+					return Guid.Empty;
+				return Guid.Parse(value);
+			}
+			catch (Exception ex)
+			{
+				Logger.Error(ex.Message, ex);
+				return Guid.Empty;
+			}
+		}
+		public static DateTime ConvertToDateTimeGB(this string s)
+		{
+			DateTime result;
+			if (!DateTime.TryParse(s, out result))
+			{
+				result = DateTime.ParseExact(s, "dd/MM/yyyyT24:mm:ssK", System.Globalization.CultureInfo.InvariantCulture);
+				result = result.AddDays(1);
+			}
+			return result;
+		}
+
+		public static DateTime? CDateTime(this string s)
+		{
+			if (s.StringIsNullEmptyWhiteSpace())
+				return null;
+			try
+			{
+				return DateTime.ParseExact(s, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture);
+			}
+			catch (Exception ex)
+			{
+				Logger.Error(ex);
+				return null;
+			}
+		}
+
+        public static bool IsValidEmail(this string s)
+        {
+            try
+            {
+                MailAddress m = new MailAddress(s);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
+		/// <summary>
+		/// Đọc số int của 1 input string từ bên trái sang: BL0069-2015 => 69
+		/// DÙng cho sort quyển biên lai theo số thứ tự tăng dần
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
+		public static int GetNumberFromLeft(string input)
+		{
+			try
+			{
+				if (input.StringIsNullEmptyWhiteSpace())
+					return 0;
+				input = input.Trim().TrimStart('0').Trim();
+				int startIndex = -1;
+				int endIndex = -1;
+				for (int i = 0; i < input.Length; i++)
+				{
+					var item = input[i];
+					if (startIndex == -1 && Char.IsNumber(item) && Char.GetNumericValue(item) > 0)
+					{
+						startIndex = i;
+						endIndex = i + 1;
+					}
+					if (startIndex > -1 && !Char.IsNumber(item))
+					{
+						endIndex = i;
+						break;
+					}
+				}
+				if (startIndex > -1)
+				{
+					var numericString = input.Substring(startIndex,endIndex - startIndex);
+					return numericString.CInt();
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error(ex);
+			}
+			return 0;
+		}
+
+
+	}
