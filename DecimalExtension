@@ -1,0 +1,57 @@
+public static class DecimalExtension
+	{
+		public static string FormatDecimal(this decimal value)
+		{
+			CultureInfo culture = new CultureInfo("vi-VN");
+			culture.NumberFormat.NumberDecimalDigits = 2;
+			culture.NumberFormat.NumberGroupSeparator = ",";
+			culture.NumberFormat.NumberDecimalSeparator = ".";
+			string result = RemovePrecision(String.Format(culture, "{0:N}", value));
+			return result;
+        }
+
+		private static string RemovePrecision(string s)
+		{
+			string strReturn = s;
+			string[] a = s.Split('.');
+			string precision = string.Empty;
+			if (a.Length == 2)
+			{
+				precision = a[1];
+				while (precision.Length > 0 && precision.Substring(precision.Length - 1, 1) == "0")
+				{
+					precision = precision.Substring(0, precision.Length - 1);
+				}
+
+				if (!string.IsNullOrEmpty(precision))
+					strReturn = a[0] + "." + precision;
+				else
+					strReturn = a[0];
+			}
+			return strReturn;
+		}
+	}
+
+	public class DecimalModelBinder : IModelBinder
+	{
+		public object BindModel(System.Web.Mvc.ControllerContext controllerContext,
+			ModelBindingContext bindingContext)
+		{
+			ValueProviderResult valueResult = bindingContext.ValueProvider
+				.GetValue(bindingContext.ModelName);
+			ModelState modelState = new ModelState { Value = valueResult };
+			object actualValue = null;
+			try
+			{
+				actualValue = Convert.ToDecimal(valueResult.AttemptedValue,
+					System.Globalization.CultureInfo.CurrentCulture);
+			}
+			catch (FormatException e)
+			{
+				modelState.Errors.Add(e);
+			}
+
+			bindingContext.ModelState.Add(bindingContext.ModelName, modelState);
+			return actualValue;
+		}
+	}
