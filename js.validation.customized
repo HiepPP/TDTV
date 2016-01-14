@@ -1,0 +1,109 @@
+jQuery.validator.addMethod("date", function (value, element) {
+    var regex = /(\d{1,2})[-/](\d{1,2})[-/](\d+)/;
+    return this.optional(element) || !/Invalid|NaN/.test("" + new Date(value.replace(regex, "$2/$1/$3")));
+}, "Vui lòng nhập ngày hợp lệ.");
+
+jQuery.validator.addMethod("dateGreaterThan",
+    function (value, element, params) {
+        var regex = /(\d{1,2})[-/](\d{1,2})[-/](\d+)/;
+        return this.optional(element) || new Date(value.replace(regex, "$2/$1/$3")) > new Date(params.replace(regex, "$2/$1/$3"));
+
+    }, "Vui lòng nhập ngày lớn hơn {0}.");
+
+jQuery.validator.addMethod("dateEqualOrGreater",
+    function (value, element, params) {
+        var regex = /(\d{1,2})[-/](\d{1,2})[-/](\d+)/;
+        return this.optional(element) || new Date(value.replace(regex, "$2/$1/$3")) >= new Date(params.replace(regex, "$2/$1/$3"));
+
+    }, "Vui lòng nhập ngày lớn hơn hoặc bằng {0}.");
+jQuery.validator.addMethod("dateLessThan",
+    function (value, element, params) {
+        var regex = /(\d{1,2})[-/](\d{1,2})[-/](\d+)/;
+        return this.optional(element) || new Date(value.replace(regex, "$2/$1/$3")) < new Date(params.replace(regex, "$2/$1/$3"));
+
+    }, "Vui lòng nhập nhỏ hơn {0}.");
+
+jQuery.validator.addMethod("dateEqualOrLessThan",
+    function (value, element, params) {
+        var regex = /(\d{1,2})[-/](\d{1,2})[-/](\d+)/;
+        return this.optional(element) || new Date(value.replace(regex, "$2/$1/$3")) <= new Date(params.replace(regex, "$2/$1/$3"));
+
+    }, "Vui lòng nhập nhỏ hơn hoặc bằng {0}.");
+
+jQuery.validator.addMethod("equalsOrGreaterThanToday",
+    function (value, element) {
+        return this.optional(element) || new Date(value.replace(/(\d{1,2})[-/](\d{1,2})[-/](\d+)/, "$2/$1/$3")) >= new Date().setHours(0, 0, 0, 0);
+    }, "Vui lòng nhập vào lớn hơn hoặc bằng ngày hiện tại.");
+jQuery.validator.addMethod("equalsOrLessThanToday",
+    function (value, element) {
+        return this.optional(element) || new Date(value.replace(/(\d{1,2})[-/](\d{1,2})[-/](\d+)/, "$2/$1/$3")) <= new Date().setHours(0, 0, 0, 0);
+    }, "Vui lòng nhập vào nhỏ hơn hoặc bằng ngày hiện tại.");
+jQuery.validator.addMethod("dateLessThanToday",
+    function (value, element) {
+        return this.optional(element) || new Date(value.replace(/(\d{1,2})[-/](\d{1,2})[-/](\d+)/, "$2/$1/$3")) < new Date().setHours(0, 0, 0, 0);
+    }, "Vui lòng nhập ngày nhỏ hơn ngày hiện tại.");
+
+jQuery.validator.addMethod("dateGreaterThanToday",
+    function (value, element) {
+        return this.optional(element) || new Date(value.replace(/(\d{1,2})[-/](\d{1,2})[-/](\d+)/, "$2/$1/$3")) > new Date().setHours(0, 0, 0, 0);
+    }, "Vui lòng nhập ngày lớn hơn ngày hiện tại.");
+
+jQuery.validator.addMethod("ageRange",
+    function (value, element, params) {
+
+        var age = Number(new Date().getFullYear()) - Number(value.split('/')[2]);
+        return this.optional(element) || (age >= params[0] && params[1] >= age);
+    }, "Vui lòng nhập vào ngày sinh hợp lệ (khoảng từ {0} đến {1} tuổi).");
+
+jQuery.validator.addMethod("validAge",
+    function (value, element, params) {
+
+        var age = Number(new Date().getFullYear()) - Number(value.split('/')[2]);
+        return this.optional(element) || (age >= params);
+    }, "Vui lòng nhập vào ngày sinh hợp lệ (phải trên {0} tuổi).");
+
+jQuery.validator.addMethod("validUsername", function (value, element) {
+    return this.optional(element) || /^[a-zA-Z0-9\-\_\.\s]+$/i.test(value);
+}, "Vui lòng chỉ nhập ký tự, số, dấu gạch ngang, dấu gạch dưới và dấu chấm.");
+
+jQuery.validator.addMethod("numberAndLetterRegex", function (value, element) {
+    return this.optional(element) || /^[a-zA-Z0-9]+$/i.test(value);
+}, "Vui lòng chỉ nhập ký tự và số.");
+
+jQuery.validator.addMethod("pwdRegex", function (value, element) {
+    return this.optional(element) || /^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/i.test(value);
+}, "Mật khẩu có chiều dài 6 đến 20 ký tự bao gồm cả số và chữ.");
+
+jQuery.validator.addMethod("validEmail", function (value, element) {
+    return this.optional(element) || /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/i.test(value);
+}, "Email không hợp lệ.");
+jQuery.validator.addMethod("validUsername", function (value, element) {
+    return this.optional(element) || /^[a-zA-Z0-9\-\_\.]+$/i.test(value);
+}, "Vui lòng chỉ nhập ký tự, số, dấu gạch ngang, dấu gạch dưới và dấu chấm.");
+jQuery.validator.addMethod("textOnly", function (value, element) {
+    return this.optional(element) || /^[^~@#$%^&*+=$<>]*$/i.test(value);
+}, "Vui lòng không nhập ký tự đặc biệt.");
+
+jQuery.validator.addMethod("validCurrency", function (value, element) {
+    return this.optional(element) || /^[0-9]{1,3}(?:,?[0-9]{3})*$/i.test(value);
+}, "Vui lòng nhập đúng định dạng tiền tệ.");
+
+jQuery.extend(jQuery.validator.messages, {
+    required: "Thông tin bắt buộc.",
+    remote: "Please fix this field.",
+    email: "Vui lòng nhập địa chỉ email hợp lệ.",
+    url: "Vui lòng nhập URL hợp lệ (http://example.com).",
+    date: "Vui lòng nhập ngày hợp lệ.",
+    dateISO: "Please enter a valid date (ISO).",
+    number: "Vui lòng chỉ nhập số.",
+    digits: "Vui lòng chỉ nhập số.",
+    creditcard: "Vui lòng nhập thông tin hợp lệ.",
+    equalTo: "Vui lòng nhập đúng thông tin ở trên.",
+    accept: "Please enter a value with a valid extension.",
+    maxlength: jQuery.validator.format("Vui lòng nhập tối đa {0} ký tự."),
+    minlength: jQuery.validator.format("Vui lòng nhập tối thiểu {0} ký tự."),
+    rangelength: jQuery.validator.format("Vui lòng nhập tối thiểu {0} và tối đa {1} ký tự."),
+    range: jQuery.validator.format("Vui lòng nhập giá trị trong khoảng từ {0} đến {1}."),
+    max: jQuery.validator.format("Vui lòng nhập giá trị nhỏ hơn hoặc bằng {0}."),
+    min: jQuery.validator.format("Vui lòng nhập giá trị lớn hơn hoặc bằng {0}.")
+});
