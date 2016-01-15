@@ -1,0 +1,30 @@
+<style type="text/css" media="print">
+    .printbutton {
+        visibility: hidden;
+        display: none;
+    }
+
+    .wrapLetterA4 {
+        width: 19cm;
+        height: 28.5cm;
+    }
+</style>
+
+<script>
+    $(window).scroll(function () {
+        $('#header-inner1').toggleClass('scrolling', $(window).scrollTop() > $('#header1').offset().top);
+        var scrollPosition, headerOffset, isScrolling;
+        scrollPosition = $(window).scrollTop();
+        headerOffset = $('#header1').offset().top;
+        isScrolling = scrollPosition > headerOffset;
+        $('#header-inner1').toggleClass('scrolling', isScrolling);
+    });
+    window.print();
+</script>
+
+<script>
+    document.write("<div id='header1'><div id='header-inner1'><button type='button' " +
+    "onClick='window.print()' " +
+    "class='printbutton pull-right' >" +
+    "<i class='fa fa-print fa-2x'></i></button></div></div>");
+</script>
