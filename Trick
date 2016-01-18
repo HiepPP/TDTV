@@ -30,3 +30,7 @@ var path = string.Format("/{0}/{1}/", ViewContext.RouteData.Values["controller"]
 
 //If value nullable but add a value null
 listvalue.Add(CheckboxValue.GetValueOrDefault());
+
+
+//Is checkbox checked?
+ if ($('#LostDiploma').is(":checked"))
