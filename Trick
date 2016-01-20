@@ -41,3 +41,9 @@ listvalue.Add(CheckboxValue.GetValueOrDefault());
      <input type="submit" id="submit-form" class="hidden" />
 </form>
 <label for="submit-form">Submit</label>
+
+
+///Submit button outside form by JQ
+ $('#btnsubmit').click(function() {
+                $('#formsubmit').submit();
+            });
