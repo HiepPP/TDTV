@@ -34,3 +34,10 @@ listvalue.Add(CheckboxValue.GetValueOrDefault());
 
 //Is checkbox checked?
  if ($('#LostDiploma').is(":checked"))
+
+//Submit button outside form
+<form method="get" action="something.php">
+     <input type="text" name="name" />
+     <input type="submit" id="submit-form" class="hidden" />
+</form>
+<label for="submit-form">Submit</label>
