@@ -47,3 +47,14 @@ listvalue.Add(CheckboxValue.GetValueOrDefault());
  $('#btnsubmit').click(function() {
                 $('#formsubmit').submit();
             });
+
+
+///Removing header when printing
+<a href="#"  onclick="window.print()" onmouseup="document.getElementById('header').style.display=’None’;document.getElementById(‘footer’).style.display=’None'”> Print </a>
+Or
+<script>
+    document.write("<div id='header1'><div id='header-inner1'><button type='button' " +
+        "onClick='window.print()'" + "onmouseup='document.getElementById('header').style.display ='None';document.getElementById('footer').style.display ='None'' " +
+        "class='printbutton pull-right' >" +
+        "<i class='fa fa-print fa-2x'></i></button></div></div>");
+</script>
