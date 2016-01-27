@@ -1,0 +1,68 @@
+ if (Request.Files.Count > 0 && CheckFileNameInput())
+                {
+                    int count = Request.Files.Count;
+                    if (count > 3)
+                    {
+                        TempData[HCCLBLConstants.HCC_ERROR_KEY] = "Chỉ cho phép đính kèm tối đa 3 tập tin hình ảnh.";
+                        return View(model);
+                    }
+                    var allowedFile = WebConfigurationManager.AppSettings["Hcc_Upload_Allowed_Image_Files"].ToLower().Split(',');
+                    if (allowedFile.Length > 0)
+                    {
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (!allowedFile.Contains(Path.GetExtension(Request.Files[i].FileName.ToLower()).Substring(1)))
+                            {
+                                TempData[HCCLBLConstants.HCC_ERROR_KEY] = "Chỉ cho phép đính kèm tập tin hình ảnh.";
+                                return View(model);
+                            }
+                        }
+                    }
+                    string listUrlImage = "";
+                    string urlImage = "";
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!Request.Files[i].FileName.StringIsNullEmptyWhiteSpace())
+                        {
+                            var strImage = Math.Abs(Guid.NewGuid().GetHashCode()).ToString() + Math.Abs(Guid.NewGuid().GetHashCode()).ToString();
+                            strImage = (DateTime.Now.ToString("yyyyMMddHHmmssfff") + strImage);
+                            strImage = strImage.Substring(0, 26);
+                            strImage = strImage + "." + Path.GetExtension(Request.Files[i].FileName).Substring(1);
+                            strImage = "~/Upload/EnclosedFiles/" + strImage;
+                            Request.Files[i].SaveAs(Server.MapPath(strImage));
+                            if (i != count - 1)
+                            {
+                                urlImage = string.Concat(strImage.Replace("~", ""), ",");
+                            }
+                            else
+                            {
+                                urlImage = strImage.Replace("~", "");
+                            }
+                            listUrlImage = string.Concat(listUrlImage, urlImage);
+                        }
+                    }
+                    model.EnclosedFile = listUrlImage;
+                }
+                else if (!UserSessionWrapper.Current.Requisition.EnclosedFile.StringIsNullEmptyWhiteSpace())
+                {
+                    model.EnclosedFile = UserSessionWrapper.Current.Requisition.EnclosedFile;
+                }
+                else
+                {
+                    TempData[HCCLBLConstants.HCC_ERROR_KEY] = string.Format(HCCMSGConstants.HCC_MSG_001, "hồ sơ đính kèm. Hồ sơ đính có thể là hình ảnh của bản photo văn bằng hoặc giấy xác nhận của nhà Trường");
+                    return View(model);
+                }
+ 
+ private bool CheckFileNameInput()
+        {
+            bool check = true;
+            int count = Request.Files.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (Request.Files[i].FileName.StringIsNullEmptyWhiteSpace())
+                {
+                    check = false;
+                }
+            }
+            return check;
+        }
