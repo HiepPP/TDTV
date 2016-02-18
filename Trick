@@ -58,6 +58,10 @@ Or
         "class='printbutton pull-right' >" +
         "<i class='fa fa-print fa-2x'></i></button></div></div>");
 </script>
+AND
+@media print {
+    #Header, #Footer { display: none !important; }
+}
 
 
 ///Load default date when document ready
