@@ -71,3 +71,17 @@ AND
                 var r= date.format("DD/MM/YYYY");
                 $('#EndDate').val(r);
             }
+///Submit list of checked box
+var acceptHs = function() {
+            count = 0;
+            var stringlst = '';
+            var chklst = $('.checklist');
+            //var chklst = document.getElementsByName('checklist');
+            for (var k = 0; k < chklst.length; k++) {
+                if (chklst[k].checked) {
+                    stringlst = stringlst + " " + chklst[k].value;
+                }
+                $('#hiddenLst').val(stringlst);
+            }
+            $('#formList').submit();
+        }
