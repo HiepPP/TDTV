@@ -85,3 +85,4 @@ var acceptHs = function() {
             }
             $('#formList').submit();
         }
+string[] lstvalue = lst.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
