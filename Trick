@@ -86,3 +86,9 @@ var acceptHs = function() {
             $('#formList').submit();
         }
 string[] lstvalue = lst.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+///Set seletecd value for dropdownlist then disable
+ $('#BankId option[value='+value+']').attr('selected', 'selected');
+                            $('#BankId').prop('disabled', true);
+=> Enable before submit
+  $("#BankId").removeAttr("disabled");
