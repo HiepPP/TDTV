@@ -92,3 +92,6 @@ string[] lstvalue = lst.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmpty
                             $('#BankId').prop('disabled', true);
 => Enable before submit
   $("#BankId").removeAttr("disabled");
+  
+///Convert datetime to string without time
+var datestring = datePicker.Value.ToShortDateString();
