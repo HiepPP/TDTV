@@ -1,0 +1,4 @@
+//catch exception in imediate window
+((System.Data.Entity.Validation.DbEntityValidationException)$exception)
+    .EntityValidationErrors.First()
+    .ValidationErrors.First()
