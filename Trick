@@ -95,3 +95,11 @@ string[] lstvalue = lst.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmpty
   
 ///Convert datetime to string without time
 var datestring = datePicker.Value.ToShortDateString();
+
+//Check if file request do not have
+ if (Request.Files.Count > 0)
+                {
+                    if (Request.Files[0].ContentLength <= 0)
+                    {
+                        model.EnclosedFile = null;
+                    }
