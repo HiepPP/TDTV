@@ -1,0 +1,884 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Web.Configuration;
+using Hcc.Infrastructure.Base;
+using Hcc.Infrastructure.Extensions;
+using Hcc.Infrastructure.Utilities;
+using OfficeOpenXml;
+
+namespace Hcc.Infrastructure.Helpers
+{
+	public class ExcelHelper
+	{
+		public static byte[] ExcelExport(string templateFile, IEnumerable<object> dataExport)
+		{
+			if (templateFile.IsNull() || dataExport.IsNull())
+				return null;
+			try
+			{
+				var fileTpl = new FileInfo(templateFile);
+				if (fileTpl.IsNull())
+					return null;
+
+				using (ExcelPackage package = new ExcelPackage(fileTpl))
+				{
+					ExcelWorksheet worksheet;
+					ExcelWorksheet indexsheet;
+					var columnConfig = GetExcelConfig(package, out worksheet, out indexsheet);
+					if (columnConfig.IsNull())
+						return null;
+					var STTColumnName = WebConfigurationManager.AppSettings["OrderColumnName"];
+					if (STTColumnName.StringIsNullEmptyWhiteSpace())
+						STTColumnName = string.Empty;
+					//Export data to worksheet
+					int rowcount = 1;
+					var firstRowIndex = columnConfig.Min(x => x.ExcelStartRow);
+					var lastColumnIndex = columnConfig.Max(x => x.ExcelStartColumn);
+					foreach (var item in dataExport)
+					{
+						//Copy row de lay style cua first row
+						if (rowcount != 1)
+							worksheet.Cells[firstRowIndex + 1, 1, firstRowIndex + 1, lastColumnIndex]
+							 .Copy(worksheet.Cells[firstRowIndex + rowcount, 1, firstRowIndex + rowcount, lastColumnIndex]);
+						foreach (var excelconfig in columnConfig)
+						{
+							try
+							{
+								if (excelconfig.PropertyName.Equals(STTColumnName, StringComparison.OrdinalIgnoreCase)) //Export STT
+								{
+									worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, rowcount);
+								}
+								else
+								{
+									var propertyinfo = item.GetType().GetProperties().FirstOrDefault(proc => proc.Name.Equals(excelconfig.PropertyName, StringComparison.OrdinalIgnoreCase));
+									if (!propertyinfo.IsNull() && propertyinfo.CanRead)
+									{
+										if (rowcount == 1 && (propertyinfo.PropertyType == typeof(DateTime?) || propertyinfo.PropertyType == typeof(DateTime)))
+											worksheet.Column(excelconfig.ExcelStartColumn).Style.Numberformat.Format = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+										worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, propertyinfo.GetValue(item, null));
+									}
+								}
+							}
+							catch (Exception ex)
+							{
+								Logger.Info("ExcelExport: " + templateFile + ".Column: " + excelconfig.PropertyName, ex);
+							}
+						}
+						rowcount++;
+					}
+
+					return package.GetAsByteArray();
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error("ExcelExport: " + templateFile, ex);
+			}
+			return null;
+		}
+
+		public static byte[] ExcelExport(string templateFile, List<List<Dictionary<string, string>>> dataExport)
+		{
+			if (templateFile.IsNull() || dataExport.IsNull())
+				return null;
+			try
+			{
+				var fileTpl = new FileInfo(templateFile);
+				if (fileTpl.IsNull())
+					return null;
+
+				using (ExcelPackage package = new ExcelPackage(fileTpl))
+				{
+					ExcelWorksheet worksheet;
+					ExcelWorksheet indexsheet;
+					var columnConfig = GetExcelConfig(package, out worksheet, out indexsheet);
+					if (columnConfig.IsNull())
+						return null;
+					var STTColumnName = WebConfigurationManager.AppSettings["OrderColumnName"];
+					if (STTColumnName.StringIsNullEmptyWhiteSpace())
+						STTColumnName = string.Empty;
+					//Export data to worksheet
+					int rowcount = 1;
+					var firstRowIndex = columnConfig.Min(x => x.ExcelStartRow);
+					var lastColumnIndex = columnConfig.Max(x => x.ExcelStartColumn);
+					foreach (var item in dataExport)
+					{
+						//Copy row de lay style cua first row
+						worksheet.Cells[firstRowIndex + 1, 1, firstRowIndex + 1, lastColumnIndex]
+						 .Copy(worksheet.Cells[firstRowIndex + rowcount + 1, 1, firstRowIndex + rowcount + 1, lastColumnIndex]);
+						//worksheet.Row(firstRowIndex+ 1).
+						foreach (var excelconfig in columnConfig)
+						{
+							try
+							{
+								if (excelconfig.PropertyName.Equals(STTColumnName, StringComparison.OrdinalIgnoreCase)) //Export STT
+								{
+									worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, rowcount);
+								}
+								else
+								{
+									worksheet.Row(excelconfig.ExcelStartRow + rowcount).Height = 22.5;
+									var propertyinfo = item.FirstOrDefault(proc => proc.ContainsKey(excelconfig.PropertyName));
+									if (propertyinfo != null)
+									{
+										worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, propertyinfo[excelconfig.PropertyName]);
+									}
+								}
+							}
+							catch (Exception ex)
+							{
+								Logger.Info("ExcelExport: " + templateFile + ".Column: " + excelconfig.PropertyName, ex);
+							}
+						}
+						rowcount++;
+					}
+					worksheet.DeleteRow(firstRowIndex + rowcount);
+					return package.GetAsByteArray();
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error("ExcelExport: " + templateFile, ex);
+			}
+			return null;
+		}
+
+		public static List<T> ExcelImport<T>(Stream inputFileStream, ref string errorMessage) where T : BaseObjectImport
+		{
+			if (inputFileStream.IsNull())
+			{
+				errorMessage = "Xin hãy chọn đúng file mẫu để Import dữ liệu.";
+				return null;
+			}
+			try
+			{
+				using (ExcelPackage package = new ExcelPackage(inputFileStream))
+				{
+					ExcelWorksheet worksheet;
+					ExcelWorksheet indexsheet;
+					var columnConfig = GetExcelConfig(package, out worksheet, out indexsheet);
+					if (columnConfig.IsNull())
+					{
+						errorMessage = "Không tìm thấy sheet: Index. Xin hãy chọn đúng file mẫu để Import dữ liệu.";
+						return null;
+					}
+					//Import data from worksheet
+					if (worksheet.IsNull() || columnConfig.IsNull() || columnConfig.Count == 0)
+					{
+						errorMessage = "Không tìm thấy sheet chứa dữ liệu, hoặc dữ liệu khai báo trong sheet index không đúng. Xin hãy chọn đúng file mẫu để Import dữ liệu.";
+						return null;
+					}
+					int rowcount = 1;
+					bool checksum = false;
+					foreach (var x in columnConfig)
+					{
+						if (!worksheet.GetValue(x.ExcelStartRow + rowcount, x.ExcelStartColumn).IsNull())
+						{
+							checksum = true;
+							break;
+						}
+					}
+
+					var resultlist = new List<T>();
+					while (checksum)
+					{
+						checksum = false;
+						var objectT = Activator.CreateInstance(typeof(T));
+						(objectT as BaseObjectImport).Dictionary = new Dictionary<string, string>();
+						columnConfig.ForEach(x =>
+						{
+							var guidValue = Guid.Empty;
+							if (Guid.TryParse(x.PropertyName, out guidValue))
+							{
+								var cellvalue = worksheet.GetValue(x.ExcelStartRow + rowcount, x.ExcelStartColumn);
+								(objectT as BaseObjectImport).Dictionary.Add(x.PropertyName, cellvalue.IsNull() ? string.Empty : cellvalue.ToString());
+								if (!cellvalue.IsNull())
+								{
+									checksum = true;
+								}
+
+							}
+							else
+							{
+								var cellvalue = worksheet.GetValue(x.ExcelStartRow + rowcount, x.ExcelStartColumn);
+								SetPropertyValue(objectT, x.PropertyName, cellvalue);
+								if (!cellvalue.IsNull())
+									checksum = true;
+							}
+						});
+						if (checksum)
+						{
+							resultlist.Add((T)objectT);
+						}
+						rowcount++;
+					}
+					return resultlist;
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error("ExcelImport", ex);
+				errorMessage = "Đã xảy ra lỗi khi đọc file dữ liệu. Xin hãy kiểm tra và chọn đúng file mẫu để Import dữ liệu.";
+				return null;
+			}
+
+		}
+		public static void SetPropertyValue(object obj, string propertyName, object value)
+		{
+			try
+			{
+				var propertyinfo = obj.GetType().GetProperties().FirstOrDefault(proc => proc.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+				if (!propertyinfo.IsNull() && propertyinfo.CanWrite)
+				{
+					if ((propertyinfo.PropertyType == typeof(Int32) || propertyinfo.PropertyType == typeof(Int32?)) && !value.IsNull())
+						propertyinfo.SetValue(obj, Convert.ToInt32(value), null);
+					if ((propertyinfo.PropertyType == typeof(Decimal) || propertyinfo.PropertyType == typeof(Decimal?)) && !value.IsNull())
+						propertyinfo.SetValue(obj, Convert.ToDecimal(value), null);
+					else if ((propertyinfo.PropertyType == typeof(DateTime) || propertyinfo.PropertyType == typeof(DateTime?)) && !value.IsNull())
+					{
+						if (value.GetType().UnderlyingSystemType == typeof(DateTime))
+							propertyinfo.SetValue(obj, (DateTime)value, null);
+						else if (value.GetType().UnderlyingSystemType == typeof(double))
+							propertyinfo.SetValue(obj, DateTime.FromOADate((double)value), null);
+						else
+							propertyinfo.SetValue(obj, value.ToString().ConvertToDateTimeGB(), null);
+					}
+					else if ((propertyinfo.PropertyType == typeof(Guid) || propertyinfo.PropertyType == typeof(Guid?)) && !value.IsNull())
+						propertyinfo.SetValue(obj, new Guid(value.ToString()), null);
+					else if ((propertyinfo.PropertyType == typeof(bool) || propertyinfo.PropertyType == typeof(bool?)) && !value.IsNull())
+					{
+						if (value.ToString().ToLower() == "yes" || value.ToString().ToLower() == "có")
+							propertyinfo.SetValue(obj, true, null);
+						else propertyinfo.SetValue(obj, Convert.ToBoolean(value), null);
+					}
+					else if (propertyinfo.PropertyType.IsEnum)
+					{
+						foreach (var field in propertyinfo.PropertyType.GetFields())
+						{
+							var attribute = Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
+							if (attribute != null)
+							{
+								if (attribute.Description.Equals(value.ToString(), StringComparison.OrdinalIgnoreCase))
+								{
+									propertyinfo.SetValue(obj, field.GetValue(null), null);
+									break;
+								}
+								else
+								{
+									var customAttribute = Attribute.GetCustomAttribute(field, typeof(CustomDescAttribute)) as CustomDescAttribute;
+									if (customAttribute != null)
+									{
+										if (customAttribute.Description.Equals(value.ToString(), StringComparison.OrdinalIgnoreCase))
+										{
+											propertyinfo.SetValue(obj, field.GetValue(null), null);
+											break;
+										}
+									}
+								}
+							}
+							if (field.Name.Equals(value.ToString(), StringComparison.OrdinalIgnoreCase))
+							{
+								propertyinfo.SetValue(obj, field.GetValue(null), null);
+								break;
+							}
+						}
+					}
+					else if (!value.IsNull())
+						propertyinfo.SetValue(obj, value.ToString(), null);
+
+				}
+			}
+			catch (Exception ex)
+			{
+
+			}
+		}
+		public static string IndexSheetName = "Index";
+		public static int MaxRowColumnScan = 20;
+		public static string PropertyColumnName = "Property Name";
+
+		public static object ConfigurationManager { get; private set; }
+
+		public static List<ExcelConfiguration> GetExcelConfig(ExcelPackage package, out ExcelWorksheet worksheet, out ExcelWorksheet indexsheet)
+		{
+			var columnConfig = new List<ExcelConfiguration>(); //Property name. ExcelConfiguration
+			worksheet = null;
+			indexsheet = null;
+			//1. Search Index sheet for property mapping 
+			indexsheet = package.Workbook.Worksheets.FirstOrDefault(x => x.Name.Equals(IndexSheetName, StringComparison.OrdinalIgnoreCase));
+			if (indexsheet.IsNull())
+				return null;
+			//Scan first 20 col, 20 row get start of config
+			for (int row = 1; row <= MaxRowColumnScan; row++)
+			{
+				int col = 1;
+				for (col = 1; col <= MaxRowColumnScan; col++)
+				{
+					if (indexsheet.Cells[row, col].Value.ConvertToString() == PropertyColumnName)
+						break;
+				}
+
+				var procName = indexsheet.Cells[row, col].Value.ConvertToString();
+				while (!string.IsNullOrEmpty(procName))
+				{
+					var headerName = indexsheet.Cells[row, col + 1].Value.ConvertToString();
+					if (!string.IsNullOrEmpty(headerName))
+					{
+						columnConfig.Add(new ExcelConfiguration() { PropertyName = procName, ExcelColumnHeader = headerName });
+					}
+					row++;
+					procName = indexsheet.Cells[row, col].Value.ConvertToString();
+				}
+				//Break loop if found the first config column
+				if (col < MaxRowColumnScan)
+					break;
+			}
+			if (columnConfig.Count == 0)
+				return null;
+
+			//Open working worksheet 
+			worksheet = package.Workbook.Worksheets.FirstOrDefault(x => !x.Name.Equals(IndexSheetName, StringComparison.OrdinalIgnoreCase));
+			if (worksheet.IsNull())
+				return null;
+			//Scan for first exist cell value, and compare column header
+			for (int firstCol = 1; firstCol <= MaxRowColumnScan; firstCol++)
+			{
+				int firstRow = 1;
+				for (firstRow = 1; firstRow <= MaxRowColumnScan; firstRow++)
+				{
+					var firstcellvalue = worksheet.Cells[firstRow, firstCol].Value.ConvertToString();
+					if (!string.IsNullOrEmpty(firstcellvalue))
+					{
+						//Check for first header column
+						var firstcolumn = columnConfig.FirstOrDefault(x => x.ExcelColumnHeader.Equals(firstcellvalue, StringComparison.OrdinalIgnoreCase));
+						if (!firstcolumn.IsNull())
+							break;
+					}
+				}
+				//Scan 100 columns and 5 rows, begin at startRow,firstcolumn
+				var checkFound = false;
+				for (int row_ = firstRow; row_ < firstRow + 5; row_++)
+				{
+					for (int col_ = firstCol; col_ < firstCol + 100; col_++)
+					{
+						var columnheader = worksheet.Cells[row_, col_].Value.ConvertToString();
+						if (!string.IsNullOrEmpty(columnheader))
+						{
+							var excelcolumn = columnConfig.FirstOrDefault(x => x.ExcelColumnHeader.Equals(columnheader, StringComparison.OrdinalIgnoreCase));
+							if (excelcolumn.IsNotNull()) //Update first cell for this column header
+							{
+								excelcolumn.ExcelStartRow = row_;
+								excelcolumn.ExcelStartColumn = col_;
+								checkFound = true;
+                            }
+						}
+					}
+					if (checkFound)
+                        break;
+				}
+				//break loop if found the first column header
+				if (firstRow < MaxRowColumnScan)
+					break;
+			}
+			var maxRowStart = columnConfig.Max(x => x.ExcelStartRow);
+			columnConfig.ForEach(x => x.ExcelStartRow = maxRowStart);//Update start row to max row
+			return columnConfig.Where(x => x.ExcelStartColumn > 0 & x.ExcelStartRow > 0).ToList();
+		}
+
+		public static byte[] SetupTemplate(string templateFile, Dictionary<string, string> configs, Dictionary<string, string> heading)
+		{
+			if (templateFile.IsNull() || configs.IsNull())
+				return null;
+			try
+			{
+				var fileTpl = new FileInfo(templateFile);
+				if (fileTpl.IsNull())
+					return null;
+
+				using (ExcelPackage package = new ExcelPackage(fileTpl))
+				{
+					ExcelWorksheet worksheet;
+					ExcelWorksheet indexsheet;
+
+					var columnConfig = new List<ExcelConfiguration>(); //Property name. ExcelConfiguration
+					indexsheet = package.Workbook.Worksheets.FirstOrDefault(x => x.Name.Equals(IndexSheetName, StringComparison.OrdinalIgnoreCase));
+					if (indexsheet.IsNull())
+						return null;
+
+					//Scan first 20 col, 20 row get start of config
+					for (int row = 1; row <= MaxRowColumnScan; row++)
+					{
+						int col = 1;
+						for (col = 1; col <= MaxRowColumnScan; col++)
+						{
+							if (indexsheet.Cells[row, col].Value.ConvertToString() == PropertyColumnName)
+								break;
+						}
+						var procName = indexsheet.Cells[row, col].Value.ConvertToString();
+						while (!string.IsNullOrEmpty(procName))
+						{
+							var headerName = indexsheet.Cells[row, col + 1].Value.ConvertToString();
+							if (!string.IsNullOrEmpty(headerName))
+							{
+								columnConfig.Add(new ExcelConfiguration() { PropertyName = procName, ExcelColumnHeader = headerName });
+							}
+							row++;
+							procName = indexsheet.Cells[row, col].Value.ConvertToString();
+						}
+						//Break loop if found the first config column
+						if (col < MaxRowColumnScan)
+						{
+							foreach (var item in configs)
+							{
+								indexsheet.Cells[row, col].Value = item.Key;
+								indexsheet.Cells[row, col + 1].Value = item.Value;
+								row++;
+							}
+							break;
+						}
+					}
+
+					//Open working worksheet 
+					worksheet = package.Workbook.Worksheets.FirstOrDefault(x => !x.Name.Equals(IndexSheetName, StringComparison.OrdinalIgnoreCase));
+					if (worksheet.IsNull())
+						return null;
+					//Scan for first exist cell value, and compare column header
+					for (int firstCol = 1; firstCol <= MaxRowColumnScan; firstCol++)
+					{
+						int firstRow = 1;
+						for (firstRow = 1; firstRow <= MaxRowColumnScan; firstRow++)
+						{
+							var firstcellvalue = worksheet.Cells[firstRow, firstCol].Value.ConvertToString();
+							if (!string.IsNullOrEmpty(firstcellvalue))
+							{
+								//Check for first header column
+								var firstcolumn = columnConfig.FirstOrDefault(x => x.ExcelColumnHeader.Equals(firstcellvalue, StringComparison.OrdinalIgnoreCase));
+								if (!firstcolumn.IsNull())
+									break;
+							}
+						}
+
+						//break loop if found the first column header
+						if (firstRow < MaxRowColumnScan)
+						{
+							int i;
+							for (i = firstCol; i < 100; i++)
+							{
+								var firstcellvalue = worksheet.Cells[firstRow, i].Value.ConvertToString();
+								if (string.IsNullOrEmpty(firstcellvalue))
+									break;
+							}
+							foreach (var item in configs)
+							{
+								worksheet.Cells[firstRow, i].Value = item.Value;
+								i++;
+							}
+							break;
+						}
+					}
+					if (heading.IsNotNull())
+						ExportPramaters(worksheet, 1, 100, 100, heading);
+
+					return package.GetAsByteArray();
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error("ExcelExport: " + templateFile, ex);
+			}
+			return null;
+		}
+
+        //download execl ket qua thi
+        public static byte[] SetupTemplateResult(string templateFile, Dictionary<string, string> configs, Dictionary<string, string> heading, List<List<Dictionary<string, string>>> dataExport)
+        {
+            if (templateFile.IsNull() || configs.IsNull())
+                return null;
+            try
+            {
+                var fileTpl = new FileInfo(templateFile);
+                if (fileTpl.IsNull())
+                    return null;
+
+                using (ExcelPackage package = new ExcelPackage(fileTpl))
+                {
+                    ExcelWorksheet worksheet;
+                    ExcelWorksheet indexsheet;
+
+                    var columnConfig = new List<ExcelConfiguration>(); //Property name. ExcelConfiguration
+                    indexsheet = package.Workbook.Worksheets.FirstOrDefault(x => x.Name.Equals(IndexSheetName, StringComparison.OrdinalIgnoreCase));
+                    if (indexsheet.IsNull())
+                        return null;
+
+                    //Scan first 20 col, 20 row get start of config
+                    for (int row = 1; row <= MaxRowColumnScan; row++)
+                    {
+                        int col = 1;
+                        for (col = 1; col <= MaxRowColumnScan; col++)
+                        {
+                            if (indexsheet.Cells[row, col].Value.ConvertToString() == PropertyColumnName)
+                                break;
+                        }
+                        var procName = indexsheet.Cells[row, col].Value.ConvertToString();
+                        while (!string.IsNullOrEmpty(procName))
+                        {
+                            var headerName = indexsheet.Cells[row, col + 1].Value.ConvertToString();
+                            if (!string.IsNullOrEmpty(headerName))
+                            {
+                                columnConfig.Add(new ExcelConfiguration() { PropertyName = procName, ExcelColumnHeader = headerName });
+                            }
+                            row++;
+                            procName = indexsheet.Cells[row, col].Value.ConvertToString();
+                        }
+                        //Break loop if found the first config column
+                        if (col < MaxRowColumnScan)
+                        {
+                            foreach (var item in configs)
+                            {
+                                indexsheet.Cells[row, col].Value = item.Key;
+                                indexsheet.Cells[row, col + 1].Value = item.Value;
+                                row++;
+                            }
+                            break;
+                        }
+                    }
+
+                    //Open working worksheet 
+                    worksheet = package.Workbook.Worksheets.FirstOrDefault(x => !x.Name.Equals(IndexSheetName, StringComparison.OrdinalIgnoreCase));
+                    if (worksheet.IsNull())
+                        return null;
+                    //Scan for first exist cell value, and compare column header
+                    for (int firstCol = 1; firstCol <= MaxRowColumnScan; firstCol++)
+                    {
+                        int firstRow = 1;
+                        for (firstRow = 1; firstRow <= MaxRowColumnScan; firstRow++)
+                        {
+                            var firstcellvalue = worksheet.Cells[firstRow, firstCol].Value.ConvertToString();
+                            if (!string.IsNullOrEmpty(firstcellvalue))
+                            {
+                                //Check for first header column
+                                var firstcolumn = columnConfig.FirstOrDefault(x => x.ExcelColumnHeader.Equals(firstcellvalue, StringComparison.OrdinalIgnoreCase));
+                                if (!firstcolumn.IsNull())
+                                    break;
+                            }
+                        }
+
+                        //break loop if found the first column header
+                        if (firstRow < MaxRowColumnScan)
+                        {
+                            int i;
+                            for (i = firstCol; i < 100; i++)
+                            {
+                                var firstcellvalue = worksheet.Cells[firstRow, i].Value.ConvertToString();
+                                if (string.IsNullOrEmpty(firstcellvalue))
+                                    break;
+                            }
+                            foreach (var item in configs)
+                            {
+                                worksheet.Cells[firstRow, i].Value = item.Value;
+                                i++;
+                            }
+                            break;
+                        }
+                    }
+                    if (heading.IsNotNull())
+                        ExportPramaters(worksheet, 1, 100, 100, heading);
+
+
+                    var columnConfig1 = GetExcelConfig(package, out worksheet, out indexsheet);
+                    if (columnConfig1.IsNull())
+                        return null;
+                    var STTColumnName = WebConfigurationManager.AppSettings["OrderColumnName"];
+                    if (STTColumnName.StringIsNullEmptyWhiteSpace())
+                        STTColumnName = string.Empty;
+                    //Export data to worksheet
+                    int rowcount = 1;
+                    var firstRowIndex = columnConfig1.Min(x => x.ExcelStartRow);
+                    var lastColumnIndex = columnConfig1.Max(x => x.ExcelStartColumn);
+                    foreach (var item in dataExport)
+                    {
+                        //Copy row de lay style cua first row
+                        worksheet.Cells[firstRowIndex + 1, 1, firstRowIndex + 1, lastColumnIndex]
+                         .Copy(worksheet.Cells[firstRowIndex + rowcount + 1, 1, firstRowIndex + rowcount + 1, lastColumnIndex]);
+                        //worksheet.Row(firstRowIndex+ 1).
+                        foreach (var excelconfig in columnConfig1)
+                        {
+                            try
+                            {
+                                if (excelconfig.PropertyName.Equals(STTColumnName, StringComparison.OrdinalIgnoreCase)) //Export STT
+                                {
+                                    worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, rowcount);
+                                }
+                                else
+                                {
+                                    worksheet.Row(excelconfig.ExcelStartRow + rowcount).Height = 22.5;
+                                    var propertyinfo = item.FirstOrDefault(proc => proc.ContainsKey(excelconfig.PropertyName));
+                                    if (propertyinfo != null)
+                                    {
+                                        worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, propertyinfo[excelconfig.PropertyName]);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Info("ExcelExport: " + templateFile + ".Column: " + excelconfig.PropertyName, ex);
+                            }
+                        }
+                        rowcount++;
+                    }
+                    worksheet.DeleteRow(firstRowIndex + rowcount);
+
+
+                    return package.GetAsByteArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("ExcelExport: " + templateFile, ex);
+            }
+            return null;
+        }
+
+		public static void ExportPramaters(ExcelWorksheet excelSheet, int firstRowIndex, int lastColumnIndex, int lastRowIndex, Dictionary<string, string> heading = null)
+		{
+
+			var dimension = excelSheet.Dimension;
+			if (dimension == null) { return; }
+			var cells = from row in Enumerable.Range(dimension.Start.Row, dimension.End.Row)
+						from column in Enumerable.Range(dimension.Start.Column, dimension.End.Column)
+						select excelSheet.Cells[row, column];
+			try
+			{
+				foreach (var excelCell in cells)
+				{
+					try
+					{
+						var cellValue = excelCell.Value as string;
+						if (cellValue.IsNotNull())
+						{
+							heading.ToList().ForEach(x =>
+							{
+								cellValue = cellValue.Replace(x.Key, x.Value);
+							});
+							excelCell.Value = cellValue;
+						}
+
+					}
+					catch (Exception) { }
+				}
+
+			}
+			catch (Exception ex) { Logger.Error(ex); }
+		}
+
+        public static byte[] ExcelExportHeader(string templateFile, IEnumerable<object> dataExport, Dictionary<string, string> heading, Dictionary<string, string> listShift)
+        {
+            if (templateFile.IsNull() || dataExport.IsNull())
+                return null;
+            try
+            {
+                var fileTpl = new FileInfo(templateFile);
+                if (fileTpl.IsNull())
+                    return null;
+                string DsShiftSheetName = "Ca Thi";
+                string PropertyColumnNameDsHdt = "Ca Thi";
+                using (ExcelPackage package = new ExcelPackage(fileTpl))
+                {
+                    ExcelWorksheet worksheet;
+                    ExcelWorksheet indexsheet;
+
+                    ExcelWorksheet dssubjectlevelethicsheet;
+                    var columnConfig1 = new List<ExcelConfiguration>(); //Property name. ExcelConfiguration
+                    //ca thi
+                    dssubjectlevelethicsheet = package.Workbook.Worksheets.FirstOrDefault(x => x.Name.Equals(DsShiftSheetName, StringComparison.OrdinalIgnoreCase));
+                    if (dssubjectlevelethicsheet.IsNull())
+                        return null;
+                    for (int rowds = 1; rowds <= MaxRowColumnScan; rowds++)
+                    {
+                        int colds = 1;
+                        for (colds = 1; colds <= MaxRowColumnScan; colds++)
+                        {
+                            if (dssubjectlevelethicsheet.Cells[rowds, colds].Value.ConvertToString() == PropertyColumnNameDsHdt)
+                                break;
+                        }
+                        var procNameDS = dssubjectlevelethicsheet.Cells[rowds, colds].Value.ConvertToString();
+                        while (!string.IsNullOrEmpty(procNameDS))
+                        {
+                            var headerName = dssubjectlevelethicsheet.Cells[rowds, colds + 1].Value.ConvertToString();
+                            if (!string.IsNullOrEmpty(headerName))
+                            {
+                                columnConfig1.Add(new ExcelConfiguration() { PropertyName = procNameDS, ExcelColumnHeader = headerName });
+                            }
+                            rowds++;
+                            procNameDS = dssubjectlevelethicsheet.Cells[rowds, colds].Value.ConvertToString();
+                        }
+                        //Break loop if found the first config column
+                        if (colds < MaxRowColumnScan)
+                        {
+                            foreach (var item in listShift)
+                            {
+                                dssubjectlevelethicsheet.Cells[rowds, colds].Value = item.Value;
+
+                                rowds++;
+                            }
+                        }
+                    }
+
+
+                    var columnConfig = GetExcelConfig(package, out worksheet, out indexsheet);
+                    if (columnConfig.IsNull())
+                        return null;
+                    var STTColumnName = WebConfigurationManager.AppSettings["OrderColumnName"];
+                    if (STTColumnName.StringIsNullEmptyWhiteSpace())
+                        STTColumnName = string.Empty;
+                    //Export data to worksheet
+                    int rowcount = 1;
+                    var firstRowIndex = columnConfig.Min(x => x.ExcelStartRow);
+                    var lastColumnIndex = columnConfig.Max(x => x.ExcelStartColumn);
+                    foreach (var item in dataExport)
+                    {
+                        //Copy row de lay style cua first row
+                        if (rowcount != 1)
+                            worksheet.Cells[firstRowIndex + 1, 1, firstRowIndex + 1, lastColumnIndex]
+                             .Copy(worksheet.Cells[firstRowIndex + rowcount, 1, firstRowIndex + rowcount, lastColumnIndex]);
+                        foreach (var excelconfig in columnConfig)
+                        {
+                            try
+                            {
+                                if (excelconfig.PropertyName.Equals(STTColumnName, StringComparison.OrdinalIgnoreCase)) //Export STT
+                                {
+                                    worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, rowcount);
+                                }
+                                else
+                                {
+                                    var propertyinfo = item.GetType().GetProperties().FirstOrDefault(proc => proc.Name.Equals(excelconfig.PropertyName, StringComparison.OrdinalIgnoreCase));
+                                    if (!propertyinfo.IsNull() && propertyinfo.CanRead)
+                                    {
+                                        if (rowcount == 1 && (propertyinfo.PropertyType == typeof(DateTime?) || propertyinfo.PropertyType == typeof(DateTime)))
+                                            worksheet.Column(excelconfig.ExcelStartColumn).Style.Numberformat.Format = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+                                        worksheet.SetValue(excelconfig.ExcelStartRow + rowcount, excelconfig.ExcelStartColumn, propertyinfo.GetValue(item, null));
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Info("ExcelExport: " + templateFile + ".Column: " + excelconfig.PropertyName, ex);
+                            }
+                        }
+                        rowcount++;
+                    }
+                    if (heading.IsNotNull())
+                        ExportPramaters(worksheet, 1, 100, 100, heading);
+                    return package.GetAsByteArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("ExcelExport: " + templateFile, ex);
+            }
+            return null;
+        }
+        //Lộc dành cho improt trung tâm
+        public static List<T> ExcelImportPartner<T>(Stream inputFileStream, ref string errorMessage) where T : BaseObjectImport
+        {
+            if (inputFileStream.IsNull())
+            {
+                errorMessage = "Xin hãy chọn đúng file mẫu để Import dữ liệu.";
+                return null;
+            }
+            try
+            {
+                using (ExcelPackage package = new ExcelPackage(inputFileStream))
+                {
+                    ExcelWorksheet worksheet;
+                    ExcelWorksheet indexsheet;
+                    var columnConfig = GetExcelConfig(package, out worksheet, out indexsheet);
+                    if (columnConfig.IsNull())
+                    {
+                        errorMessage = "Không tìm thấy sheet: Index. Xin hãy chọn đúng file mẫu để Import dữ liệu.";
+                        return null;
+                    }
+                    //Import data from worksheet
+                    if (worksheet.IsNull() || columnConfig.IsNull() || columnConfig.Count == 0)
+                    {
+                        errorMessage = "Không tìm thấy sheet chứa dữ liệu, hoặc dữ liệu khai báo trong sheet index không đúng. Xin hãy chọn đúng file mẫu để Import dữ liệu.";
+                        return null;
+                    }
+                    int rowcount = 1;
+                    bool checksum = false;
+                    foreach (var x in columnConfig)
+                    {
+                        if (!worksheet.GetValue(x.ExcelStartRow + rowcount, x.ExcelStartColumn).IsNull())
+                        {
+                            checksum = true;
+                            break;
+                        }
+                    }
+
+                    var resultlist = new List<T>();
+                    while (checksum)
+                    {
+                        int countcell = 0;
+                        checksum = false;
+                        var objectT = Activator.CreateInstance(typeof(T));
+                        (objectT as BaseObjectImport).Dictionary = new Dictionary<string, string>();
+                        columnConfig.ForEach(x =>
+                        {
+                            var guidValue = Guid.Empty;
+                            if (Guid.TryParse(x.PropertyName, out guidValue))
+                            {
+                                var cellvalue = worksheet.GetValue(x.ExcelStartRow + rowcount, x.ExcelStartColumn);
+                                (objectT as BaseObjectImport).Dictionary.Add(x.PropertyName, cellvalue.IsNull() ? string.Empty : cellvalue.ToString());
+                                if (!cellvalue.IsNull())
+                                {
+                                    checksum = true;
+                                    countcell++;
+                                }
+                            }
+                            else
+                            {
+                                var cellvalue = worksheet.GetValue(x.ExcelStartRow + rowcount, x.ExcelStartColumn);
+                                SetPropertyValue(objectT, x.PropertyName, cellvalue);
+                                if (!cellvalue.IsNull())
+                                {
+                                    checksum = true;
+                                    countcell++;
+                                }
+                            }
+                        });
+                        if (countcell <= 1)
+                            checksum = false;
+                        if (checksum)
+                        {
+                            resultlist.Add((T)objectT);
+                        }
+                        rowcount++;
+                    }
+                    return resultlist;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("ExcelImport", ex);
+                errorMessage = "Đã xảy ra lỗi khi đọc file dữ liệu. Xin hãy kiểm tra và chọn đúng file mẫu để Import dữ liệu.";
+                return null;
+            }
+
+        }
+		public class ExcelConfiguration
+		{
+			public string PropertyName
+			{ get; set; }
+			public string ExcelColumnHeader
+			{ get; set; }
+			public int ExcelStartRow
+			{ get; set; }
+			public int ExcelStartColumn
+			{ get; set; }
+		}
+	}
+}
