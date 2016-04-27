@@ -7,3 +7,6 @@ function sleep(milliseconds) {
     }
   }
 }
+
+///Trigger change event when document.ready
+$("select#ProvinceId").trigger('change',function () {}
