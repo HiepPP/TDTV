@@ -1,0 +1,3 @@
+//Replace a part of string ex. Tỉnh
+ Update dev_hcc2.dbo.Hcc_Province
+  set Name = REPLACE(Name, N'Tỉnh','')
