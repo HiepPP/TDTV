@@ -103,3 +103,6 @@ var datestring = datePicker.Value.ToShortDateString();
                     {
                         model.EnclosedFile = null;
                     }
+// Join list to string
+list<string> lst = new List<String>();
+ string.Join(", ", level.ToArray());
