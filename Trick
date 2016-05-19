@@ -106,3 +106,6 @@ var datestring = datePicker.Value.ToShortDateString();
 // Join list to string
 list<string> lst = new List<String>();
  string.Join(", ", level.ToArray());
+
+//sub a number from a string
+Regex.Match(rpbook.CategoryNo, @"\d+").Value)
