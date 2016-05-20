@@ -109,3 +109,17 @@ list<string> lst = new List<String>();
 
 //sub a number from a string
 Regex.Match(rpbook.CategoryNo, @"\d+").Value)
+
+//Work with dictionary
++ Dictionary<string, int> save = new Dictionary<string, int>();
++ Check if exist, change value
+if (save.ContainsKey(findlevel))
+                {
+                    //save = save.ToDictionary(x => x.Key, x => x.Value + 1);
+                    save[findlevel] += 1;
+                }
+                else
+                {
+                    save.Add(findlevel,1);
+                }
++ join: List<string> lststring = save.Select(item => $"{item.Value}{item.Key}").ToList();
