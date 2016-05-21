@@ -1,0 +1,26 @@
+<div class="modal fade" id="mdlCreateBill" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="page-title"><i class="fa fa-usd"></i> Tạo mới phiếu thu</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form">
+                        <div class="form-group ">
+                            <label for="Name" class="control-label col-lg-3">Người nộp tiền: </label>
+                            <div class="col-lg-9">
+                                @Html.TextBox("CustomerName", "", new { @class = "form-control", @readonly = "readonly" })
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>                       
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="submit"><i class="fa fa-floppy-o"></i> @HCCLBLConstants.HCC_LBL_003</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fa fa-undo"></i> Hủy</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
