@@ -237,4 +237,11 @@ public static class ObjectExtension
 		{
 			return new JavaScriptSerializer().Serialize(obj);
 		}
-	}
+		 //        //distince more than 1 properties
+        	public static IEnumerable<TSource> DistinctByH<TSource, TKey>
+		(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        	{
+            		var known = new HashSet<TKey>();
+            		return source.Where(element => known.Add(keySelector(element)));
+        	}
+}
