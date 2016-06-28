@@ -244,4 +244,16 @@ public static class ObjectExtension
             		var known = new HashSet<TKey>();
             		return source.Where(element => known.Add(keySelector(element)));
         	}
+        	//Hiep.Phan compare 2 object sử dụng json
+        public static bool JsonEquals(this object obj, object another)
+        {
+            if (ReferenceEquals(obj, another)) return true;
+            if ((obj == null) || (another == null)) return false;
+            if (obj.GetType() != another.GetType()) return false;
+
+            var objJson = JsonConvert.SerializeObject(obj);
+            var anotherJson = JsonConvert.SerializeObject(another);
+
+            return objJson == anotherJson;
+        }
 }
