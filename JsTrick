@@ -13,3 +13,8 @@ $("select#ProvinceId").trigger('change',function () {}
 
 ///Remove validate
 $(this).rules('remove', 'required');
+
+// Call property from prototype
+Gadget.prototype.get = function(what) {
+return this[what];
+};
