@@ -18,3 +18,12 @@ $(this).rules('remove', 'required');
 Gadget.prototype.get = function(what) {
 return this[what];
 };
+
+///Apply vs call
+The difference is that apply lets you invoke the function with arguments as an array; 
+call requires the parameters be listed explicitly. A useful mnemonic is "A for array and C for comma."
+Pseudo syntax:
+
++ theFunction.apply(valueForThis, arrayOfArgs)
+
++ theFunction.call(valueForThis, arg1, arg2, ...)
