@@ -27,3 +27,15 @@ Pseudo syntax:
 + theFunction.apply(valueForThis, arrayOfArgs)
 
 + theFunction.call(valueForThis, arg1, arg2, ...)
+
+///normal map and Array.prototype.map.call
+              var numbers = [1, 4, 9];
+              var doubles = numbers.map(function(num) {
+                return num * 2;
+              });
+==> work with array, can't work with string.
+                  var str = '12345';
+                  Array.prototype.map.call(str, function(x) {
+                    return x;
+                  }).reverse().join(''); 
+==> work with string and array
