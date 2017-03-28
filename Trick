@@ -126,3 +126,16 @@ if (save.ContainsKey(findlevel))
                     save.Add(findlevel,1);
                 }
 + join: List<string> lststring = save.Select(item => $"{item.Value}{item.Key}").ToList();
+
+
+///Return json on api
+ public JsonResult test() 
+    {
+        var result = new JsonResult();
+        result.Data = new
+        {
+             id = 1
+         };
+        result.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        return result;
+    }
