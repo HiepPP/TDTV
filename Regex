@@ -8,4 +8,5 @@
 ///Khoảng trắng ở đầu và cuối
 ^[ \s]+|[ \s]+$
 
-///
+///replace parenthese to string empty
+var condition = Regex.Replace(request.ConditionWithName, @" ?\(.*?\)", string.Empty);
