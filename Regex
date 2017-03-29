@@ -10,3 +10,5 @@
 
 ///replace parenthese to string empty
 var condition = Regex.Replace(request.ConditionWithName, @" ?\(.*?\)", string.Empty);
+
+=>> JS: $scope.scheduleAction.ConditionWithName.replace(/ *\([^)]*\) */g, '');
