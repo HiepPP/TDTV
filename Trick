@@ -143,3 +143,6 @@ if (save.ContainsKey(findlevel))
 
 ///Get Current Area Name in View or Controller
 HttpContext.Current.Request.RequestContext.RouteData.DataTokens["area"]
+
+///Escape string quotes in string html
+=> use &quot;
