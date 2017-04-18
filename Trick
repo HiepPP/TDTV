@@ -139,3 +139,7 @@ if (save.ContainsKey(findlevel))
         result.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
         return result;
     }
+
+
+///Get Current Area Name in View or Controller
+HttpContext.Current.Request.RequestContext.RouteData.DataTokens["area"]
