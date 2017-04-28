@@ -1,0 +1,8 @@
+///Dịch bit
+Một số được luu trong máy tính dưới dạng mã nhị phân 01010101010 gì đó
+phép dich bit là phép toán dịch các bit nhịp phân này sang trái hoặc sang phải. 
+VD: 1000 => dịch phải 1 bít được 0100.
+1000 dịch phải 2 bit được 0010
+người ta dùng phép dịch bit này để nhân/chia một số với 2^k với k là số bit được dịch chuyển
+Dịch trái: Nhân với 2^k
+Dịch phải: Chia cho 2^k
