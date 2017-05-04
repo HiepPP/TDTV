@@ -1,0 +1,4 @@
+///JSONP
+JSONP works by issuing a GET request using a <script> tag, instead of using XHR requests. The
+JSONP technique creates a <script> tag and places it in the DOM. When it shows up in the DOM,
+the browser takes over and requests the script referenced in the src tag.
