@@ -2,3 +2,8 @@
 JSONP works by issuing a GET request using a <script> tag, instead of using XHR requests. The
 JSONP technique creates a <script> tag and places it in the DOM. When it shows up in the DOM,
 the browser takes over and requests the script referenced in the src tag.
+
+///$apply
+The $apply() function executes an expression inside of the Angular context from outside of the
+Angular framework. For instance, if we implement a setTimeout() or are using a third-party library
+and we want the event to run inside the Angular context, we must use $apply().
