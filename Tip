@@ -7,3 +7,12 @@ the browser takes over and requests the script referenced in the src tag.
 The $apply() function executes an expression inside of the Angular context from outside of the
 Angular framework. For instance, if we implement a setTimeout() or are using a third-party library
 and we want the event to run inside the Angular context, we must use $apply().
+The $apply() function takes one optional argument:
+• expression (string/function)
+The expression argument optionally takes a string or a function and executes it inside the current
+scope.
+If a string is passed, then $apply() will first call $eval() on the string, forcing Angular to $eval()
+the string on the local scope context.
+If a function is passed, the function will be executed on the scope passed into the function.
+The $exceptionHandler service will catch and handle any exception that the $eval() method
+throws. Lastly, the $apply() method directly calls the $digest loop.
