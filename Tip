@@ -16,3 +16,8 @@ the string on the local scope context.
 If a function is passed, the function will be executed on the scope passed into the function.
 The $exceptionHandler service will catch and handle any exception that the $eval() method
 throws. Lastly, the $apply() method directly calls the $digest loop.
+Simply said, using $scope.$apply() is a way to gain access to the Angular context from outside of
+it.
+If we call $apply() when an event is fired, we run it through the Angular event loop. If we don’t
+call $apply(), we don’t execute the function in the event loop, and it runs outside of the Angular
+context.
