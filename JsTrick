@@ -39,3 +39,12 @@ Pseudo syntax:
                     return x;
                   }).reverse().join(''); 
 ==> work with string and array
+
+//back button redirect to anotehr page
+if (window.history && window.history.pushState) {
+                window.history.pushState('', null, '');
+                @{var url = new UrlHelper(Request.RequestContext).Action("Index", "Landing"); }
+                $(window).on('popstate', function () {
+                    window.location.href = '@url';
+                });
+            }
