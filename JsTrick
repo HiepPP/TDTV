@@ -77,3 +77,13 @@ var a = arr.reduce((acc, item) => {
   acc[item] = (acc[item] || 0) + 1;
   return acc;
 }, {})
+
+
+///Concat multi arr
+const data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+const flat = data.reduce((total, amount) => {
+  total = total.concat(amount);
+  return total;
+}, []);
+
+console.log(flat)
