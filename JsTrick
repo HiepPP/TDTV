@@ -105,3 +105,20 @@ var r = data.reduce((acc, item)=> {
   acc[item] = (acc[item] || 0) + 1;
   return acc;
 }, {})
+
+///Use reduce to filler by data detail
+let data = [
+  {name: "Raphel", gender: "male"},
+  {name: "Tom", gender: "male"},
+  {name: "Jerry", gender: "male"},
+  {name: "Dorry", gender: "female"},
+  {name: "Suzie", gender: "female"},
+  {name: "Dianna", gender: "female"},
+  {name: "Prem", gender: "male"},
+];
+
+var r = data.reduce((acc, item) => {
+  acc[item.gender].push(item.name);
+  return acc;
+}, {male: [], female: []})
+
