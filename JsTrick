@@ -69,3 +69,11 @@ var countedNames = names.reduce(function (allNames, name) {
   }
   return allNames;
 }, {});
+
+----------------
+const arr = ['banana', 'cherry', 'orange', 'apple', 'cherry', 'orange', 'apple', 'banana', 'cherry', 'orange', 'fig' ];
+
+var a = arr.reduce((acc, item) => {
+  acc[item] = (acc[item] || 0) + 1;
+  return acc;
+}, {})
