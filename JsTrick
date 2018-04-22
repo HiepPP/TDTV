@@ -87,3 +87,21 @@ const flat = data.reduce((total, amount) => {
 }, []);
 
 console.log(flat)
+
+
+//get item detail then count
+const data = [
+  {a: 'happy', b: 'robin', c: ['blue','green']}, 
+  {a: 'tired', b: 'panther', c: ['green','black','orange','blue']}, 
+  {a: 'sad', b: 'goldfish', c: ['green','red']}
+];
+
+var r = data.reduce((acc, item)=> {
+  item.c.forEach((i)=>{
+    acc.push(i);
+  })
+  return acc;
+}, []).reduce((acc, item)=> {
+  acc[item] = (acc[item] || 0) + 1;
+  return acc;
+}, {})
