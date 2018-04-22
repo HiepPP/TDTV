@@ -48,3 +48,12 @@ if (window.history && window.history.pushState) {
                     window.location.href = '@url';
                 });
             }
+           
+///Convert 1D array to multidimension array
+var arr = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    var newArr = [];
+    while (arr.length > 0 ) {
+      newArr.push(arr.splice(0, 2));
+    }
+
